@@ -23,8 +23,17 @@ echo.
 echo Criando executavel...
 echo.
 
+REM Verifica se o diretorio src existe
+if not exist "src" (
+    echo ERRO: Diretorio src nao encontrado!
+    pause
+    exit /b 1
+)
+
 REM Executa o PyInstaller e define a pasta de output
-pyinstaller --onefile --windowed --name "WhatsAppRebooter" --icon=NONE --distpath "instalador" --workpath "instalador\build" --specpath "instalador" whatsapp_rebooter.py
+REM Usa --paths para adicionar src ao PYTHONPATH (melhor que --add-data para modulos Python)
+REM --collect-submodules coleta todos os submódulos automaticamente
+pyinstaller --onefile --windowed --name "WhatsAppRebooter" --icon=NONE --distpath "instalador" --workpath "instalador\build" --specpath "instalador" --paths "." --collect-submodules src --hidden-import win32timezone main.py
 
 echo.
 echo ========================================
