@@ -1,0 +1,105 @@
+$whatsappPath = "shell:AppsFolder\5319275A.WhatsAppDesktop_cv1g1gvanyjgm!App"
+$posFile = "$env:TEMP\whatsapp_pos.json"
+
+Add-Type @"
+using System;
+using System.Text;
+using System.Runtime.InteropServices;
+using System.Collections.Generic;
+
+public class Win32 {
+    public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    public static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    public static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+
+    [DllImport("user32.dll")]
+    public static extern bool IsWindowVisible(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
+    [DllImport("user32.dll")]
+    public static extern bool MoveWindow(IntPtr hWnd, int X, int Y, int nWidth, int nHeight, bool bRepaint);
+}
+
+public struct RECT {
+    public int Left;
+    public int Top;
+    public int Right;
+    public int Bottom;
+}
+
+public class WhatsAppWindowFinder {
+    public static IntPtr FindWhatsAppWindow() {
+        IntPtr found = IntPtr.Zero;
+        Win32.EnumWindows(delegate (IntPtr hWnd, IntPtr lParam) {
+            if (!Win32.IsWindowVisible(hWnd)) return true;
+
+            StringBuilder title = new StringBuilder(256);
+            Win32.GetWindowText(hWnd, title, title.Capacity);
+            if (title.ToString().ToLower().Contains("whatsapp")) {
+                found = hWnd;
+                return false; // para de procurar
+            }
+            return true;
+        }, IntPtr.Zero);
+        return found;
+    }
+}
+"@
+
+function Get-WhatsAppWindowHandle {
+    return [WhatsAppWindowFinder]::FindWhatsAppWindow()
+}
+
+while ($true) {
+    Write-Host "Reiniciando WhatsApp: $(Get-Date)"
+
+    # Captura posição da janela atual
+    $hWnd = Get-WhatsAppWindowHandle
+    if ($hWnd -ne [IntPtr]::Zero) {
+        $rect = New-Object RECT
+        if ([Win32]::GetWindowRect($hWnd, [ref]$rect)) {
+            $x = $rect.Left
+            $y = $rect.Top
+            $width = $rect.Right - $rect.Left
+            $height = $rect.Bottom - $rect.Top
+
+            $pos = @{ X = $x; Y = $y; Width = $width; Height = $height }
+            $pos | ConvertTo-Json | Set-Content -Path $posFile
+        }
+    }
+
+    # Finaliza o processo
+    Get-Process WhatsApp -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.Id -Force }
+
+    Start-Sleep -Seconds 3
+
+    # Abre novamente
+    Start-Process $whatsappPath
+
+    # Espera até o processo e a janela estarem ativos
+    $tentativas = 0
+    do {
+        Start-Sleep -Milliseconds 500
+        $hWnd = Get-WhatsAppWindowHandle
+        $tentativas++
+    } while ($hWnd -eq [IntPtr]::Zero -and $tentativas -lt 30)
+
+    Start-Sleep -Seconds 2
+
+    # Reposiciona
+    if ($hWnd -ne [IntPtr]::Zero -and (Test-Path $posFile)) {
+        $pos = Get-Content -Raw -Path $posFile | ConvertFrom-Json
+        [Win32]::MoveWindow($hWnd, [int]$pos.X, [int]$pos.Y, [int]$pos.Width, [int]$pos.Height, $true)
+        Start-Sleep -Milliseconds 500
+        [Win32]::MoveWindow($hWnd, [int]$pos.X, [int]$pos.Y, [int]$pos.Width, [int]$pos.Height, $true)
+    }
+
+    Write-Host "WhatsApp reiniciado e reposicionado. Aguardando 2h..."
+    Start-Sleep -Seconds 7200
+}
