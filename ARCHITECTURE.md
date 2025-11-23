@@ -25,7 +25,7 @@ whatapp-rebooter/
 │   └── utils/                       # Utilitários compartilhados
 │       ├── __init__.py
 │       ├── logger.py                # Sistema de logging centralizado
-│       └── config.py                # Gerenciamento de configurações
+│       └── config.py                # Gerenciamento de configurações/
 ├── logs/                            # Logs da aplicação (gerado automaticamente)
 ├── config.json                      # Configurações (gerado automaticamente)
 └── whatsapp_window_info.json        # Estado da janela (gerado automaticamente)

@@ -30,10 +30,39 @@ if [ ! -d "src" ]; then
     exit 1
 fi
 
+# Verifica se existe ícone (usa caminho absoluto para evitar problemas)
+ICON_PARAM=""
+if [ -f "assets/icon.ico" ]; then
+    # Usa caminho absoluto para garantir que funcione mesmo com --specpath
+    ICON_PATH="$(cd "$(dirname "$0")" && pwd)/assets/icon.ico"
+    ICON_PARAM="--icon=\"$ICON_PATH\""
+    echo "Ícone encontrado: $ICON_PATH"
+else
+    echo "Aviso: Ícone não encontrado. Usando padrão do Windows."
+fi
+
 # Executa o PyInstaller e define a pasta de output
 # Usa --paths para adicionar src ao PYTHONPATH (melhor que --add-data para módulos Python)
 # --collect-submodules coleta todos os submódulos automaticamente
-pyinstaller --onefile --windowed --name "WhatsAppRebooter" --icon=NONE --distpath "instalador" --workpath "instalador/build" --specpath "instalador" --paths "." --collect-submodules src --hidden-import win32timezone main.py
+if [ -n "$ICON_PARAM" ]; then
+    pyinstaller --onefile --windowed --name "WhatsAppRebooter" $ICON_PARAM --distpath "instalador" --workpath "instalador/build" --specpath "instalador" --paths "." --collect-submodules src --hidden-import win32timezone main.py
+else
+    pyinstaller --onefile --windowed --name "WhatsAppRebooter" --distpath "instalador" --workpath "instalador/build" --specpath "instalador" --paths "." --collect-submodules src --hidden-import win32timezone main.py
+fi
+
+# Copia pasta assets para instalador (para ícones e recursos)
+if [ -d "assets" ]; then
+    echo ""
+    echo "Copiando pasta assets para instalador..."
+    if [ -d "instalador/assets" ]; then
+        rm -rf "instalador/assets"
+    fi
+    cp -r "assets" "instalador/assets"
+    echo "Pasta assets copiada com sucesso!"
+else
+    echo ""
+    echo "Aviso: Pasta assets não encontrada."
+fi
 
 echo ""
 echo "========================================"
