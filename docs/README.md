@@ -1,6 +1,6 @@
 # WhatsApp Rebooter
 
-Aplicativo profissional para Windows que reinicia automaticamente o WhatsApp Desktop mantendo a posição e dimensão da janela.
+Aplicativo para Windows que reinicia automaticamente o WhatsApp Desktop mantendo a posição e dimensão da janela.
 
 ## 🎯 Funcionalidades
 
@@ -49,7 +49,7 @@ chmod +x build.sh
 ./build.sh
 ```
 
-O executável será criado na pasta `instalador/WhatsAppRebooter.exe`
+O executável será criado na pasta `dist/WhatsAppRebooter.exe`
 
 ## 📖 Uso do Aplicativo
 
@@ -62,11 +62,13 @@ O executável será criado na pasta `instalador/WhatsAppRebooter.exe`
 
 ## 🏗️ Arquitetura
 
-O projeto foi organizado de forma profissional e modular:
-
 ```
 whatapp-rebooter/
 ├── main.py                 # Ponto de entrada principal
+├── requirements.txt        # Dependências do projeto
+├── build.bat              # Script de build para Windows
+├── build.sh               # Script de build para Linux/WSL
+├── .gitignore             # Arquivos ignorados pelo Git
 ├── src/
 │   ├── core/              # Lógica de negócio
 │   │   ├── reboot_service.py    # Serviço de reboot
@@ -79,7 +81,14 @@ whatapp-rebooter/
 │   └── utils/             # Utilitários
 │       ├── logger.py            # Sistema de logging
 │       └── config.py            # Gerenciamento de configurações
-├── logs/                  # Logs da aplicação
+├── assets/                # Recursos visuais
+│   ├── icon.ico           # Ícone do aplicativo
+│   ├── icon_128.png       # Ícone 128x128
+│   ├── icon_256.png       # Ícone 256x256
+│   └── icon_512.png       # Ícone 512x512
+├── docs/                  # Documentação
+│   └── README.md          # Documentação completa
+├── logs/                  # Logs da aplicação (gerado automaticamente)
 ├── config.json            # Configurações (gerado automaticamente)
 └── whatsapp_window_info.json  # Informações da janela (gerado automaticamente)
 ```

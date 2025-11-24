@@ -95,13 +95,16 @@ class MainWindow:
         }
         
         # Fontes modernas (tenta Segoe UI, fallback para Arial)
+        # Nota: Tkinter aceita qualquer string de fonte, então não há exceção real aqui
+        # Este bloco é defensivo para compatibilidade futura
         try:
             self.font_title = ("Segoe UI", 20, "bold")
             self.font_subtitle = ("Segoe UI", 11, "bold")
             self.font_normal = ("Segoe UI", 10)
             self.font_small = ("Segoe UI", 9)
             self.font_mono = ("Consolas", 9)
-        except:
+        except (AttributeError, TypeError):
+            # Fallback para fontes seguras em caso de problema no Tkinter
             self.font_title = ("Arial", 18, "bold")
             self.font_subtitle = ("Arial", 11, "bold")
             self.font_normal = ("Arial", 10)
@@ -162,7 +165,7 @@ class MainWindow:
                 "assets/icon.ico",
                 os.path.abspath("assets/icon.ico")
             ]
-            
+
             for path in quick_paths:
                 try:
                     abs_path = os.path.abspath(os.path.normpath(path))
@@ -171,9 +174,12 @@ class MainWindow:
                         self.window_icon_path = abs_path
                         self.logger.info(f"Ícone carregado rapidamente: {abs_path}")
                         return
-                except:
+                except (OSError, tk.TclError) as e:
+                    # Falha ao carregar este caminho, tenta próximo
+                    self.logger.debug(f"Erro ao carregar ícone de {path}: {e}")
                     continue
-        except:
+        except (AttributeError, TypeError, OSError):
+            # Erro na geração de caminhos
             pass
     
     def _load_window_icon(self):
@@ -201,7 +207,9 @@ class MainWindow:
                         self.window_icon_path = abs_path
                         self.logger.info(f"Ícone encontrado: {icon_path}")
                         break
-                except:
+                except (OSError, TypeError, ValueError) as e:
+                    # Erro ao processar este caminho, tenta próximo
+                    self.logger.debug(f"Erro ao processar caminho {path}: {e}")
                     continue
             
             if not icon_path:
@@ -233,7 +241,8 @@ class MainWindow:
                     hwnd = win32gui.GetParent(hwnd)
                     if hwnd == 0:
                         hwnd = self.root.winfo_id()
-                except:
+                except (AttributeError, RuntimeError):
+                    # Erro ao obter parent HWND, usa o HWND original
                     pass
                 
                 # Converte caminho para formato Windows
@@ -763,12 +772,13 @@ class MainWindow:
         try:
             hwnd = self.root.winfo_id()
             hwnd = win32gui.GetParent(hwnd) if win32gui.GetParent(hwnd) else hwnd
-            
+
             placement = win32gui.GetWindowPlacement(hwnd)
             if placement[1] == win32con.SW_SHOWMINIMIZED:
                 win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
                 self.logger.debug("Janela do aplicativo restaurada (estava minimizada)")
-        except Exception:
+        except (AttributeError, TypeError, RuntimeError):
+            # Silencia erros de win32gui se a janela ainda não estiver pronta
             pass
     
     def _check_auto_start(self):

@@ -40,9 +40,11 @@ logs/
 config.json
 whatsapp_window_info.json
 
-# Build
-instalador/
+# Build artifacts
+dist/
+build/
 *.spec
+build.log
 
 # OS
 .DS_Store

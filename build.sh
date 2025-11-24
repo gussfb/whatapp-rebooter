@@ -1,77 +1,89 @@
 #!/bin/bash
 
-# Muda para o diretório onde o script está localizado
+# Change to script directory
 cd "$(dirname "$0")"
 
-echo "Diretório atual: $(pwd)"
+echo "Current directory: $(pwd)"
 echo ""
 
-# Cria a pasta de output ANTES de tudo
-if [ ! -d "instalador" ]; then
-    echo "Criando pasta instalador..."
-    mkdir -p instalador
-    echo "Pasta instalador criada!"
+# Create output folder before everything
+if [ ! -d "dist" ]; then
+    echo "Creating dist folder..."
+    mkdir -p dist
+    echo "Dist folder created!"
 else
-    echo "Pasta instalador já existe."
+    echo "Dist folder already exists."
 fi
 echo ""
 
-echo "Instalando dependências..."
+echo "Installing dependencies..."
 pip install -r requirements.txt
 pip install pyinstaller
 
 echo ""
-echo "Criando executável..."
+echo "Creating executable..."
 echo ""
 
-# Verifica se o diretorio src existe
+# Check if src directory exists
 if [ ! -d "src" ]; then
-    echo "ERRO: Diretório src não encontrado!"
+    echo "ERROR: src directory not found!"
     exit 1
 fi
 
-# Verifica se existe ícone (usa caminho absoluto para evitar problemas)
+# Check if executable is running (only if local dist folder exists)
+if pgrep -x "WhatsAppRebooter.exe" > /dev/null 2>&1; then
+    # Process is running, only block if it's from this folder
+    if [ -f "dist/WhatsAppRebooter.exe" ]; then
+        echo "WARNING: WhatsAppRebooter.exe from this folder is running!"
+        echo "Close the application before building again."
+        exit 1
+    else
+        echo "WARNING: WhatsAppRebooter.exe detected (possibly from another folder)."
+        echo "Since local executable doesn't exist, continuing build..."
+    fi
+fi
+
+# Check if icon exists (use absolute path to avoid issues)
 ICON_PARAM=""
 if [ -f "assets/icon.ico" ]; then
-    # Usa caminho absoluto para garantir que funcione mesmo com --specpath
+    # Use absolute path to ensure it works even with --specpath
     ICON_PATH="$(cd "$(dirname "$0")" && pwd)/assets/icon.ico"
     ICON_PARAM="--icon=\"$ICON_PATH\""
-    echo "Ícone encontrado: $ICON_PATH"
+    echo "Icon found: $ICON_PATH"
 else
-    echo "Aviso: Ícone não encontrado. Usando padrão do Windows."
+    echo "Warning: Icon not found. Using Windows default."
 fi
 
-# Executa o PyInstaller e define a pasta de output
-# Usa --paths para adicionar src ao PYTHONPATH (melhor que --add-data para módulos Python)
-# --collect-submodules coleta todos os submódulos automaticamente
+# Run PyInstaller and set output folder
+# Use --paths to add src to PYTHONPATH
+# --collect-submodules collects all submodules automatically
 if [ -n "$ICON_PARAM" ]; then
-    pyinstaller --onefile --windowed --name "WhatsAppRebooter" $ICON_PARAM --distpath "instalador" --workpath "instalador/build" --specpath "instalador" --paths "." --collect-submodules src --hidden-import win32timezone main.py
+    pyinstaller --onefile --windowed --name "WhatsAppRebooter" $ICON_PARAM --distpath "dist" --workpath "dist/build" --specpath "dist" --paths "." --collect-submodules src --hidden-import win32timezone main.py
 else
-    pyinstaller --onefile --windowed --name "WhatsAppRebooter" --distpath "instalador" --workpath "instalador/build" --specpath "instalador" --paths "." --collect-submodules src --hidden-import win32timezone main.py
+    pyinstaller --onefile --windowed --name "WhatsAppRebooter" --distpath "dist" --workpath "dist/build" --specpath "dist" --paths "." --collect-submodules src --hidden-import win32timezone main.py
 fi
 
-# Copia pasta assets para instalador (para ícones e recursos)
+# Copy assets folder to dist (for icons and resources)
 if [ -d "assets" ]; then
     echo ""
-    echo "Copiando pasta assets para instalador..."
-    if [ -d "instalador/assets" ]; then
-        rm -rf "instalador/assets"
+    echo "Copying assets folder to dist..."
+    if [ -d "dist/assets" ]; then
+        rm -rf "dist/assets"
     fi
-    cp -r "assets" "instalador/assets"
-    echo "Pasta assets copiada com sucesso!"
+    cp -r "assets" "dist/assets"
+    echo "Assets folder copied successfully!"
 else
     echo ""
-    echo "Aviso: Pasta assets não encontrada."
+    echo "Warning: Assets folder not found."
 fi
 
 echo ""
 echo "========================================"
-if [ -f "instalador/WhatsAppRebooter.exe" ]; then
-    echo "SUCESSO! Executável criado em:"
-    echo "$(pwd)/instalador/WhatsAppRebooter.exe"
+if [ -f "dist/WhatsAppRebooter.exe" ]; then
+    echo "SUCCESS! Executable created at:"
+    echo "$(pwd)/dist/WhatsAppRebooter.exe"
 else
-    echo "ERRO: Executável não foi criado!"
-    echo "Verifique as mensagens de erro acima."
+    echo "ERROR: Executable was not created!"
+    echo "Check error messages above."
 fi
 echo "========================================"
-

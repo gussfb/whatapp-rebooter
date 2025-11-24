@@ -26,8 +26,12 @@ class Config:
             try:
                 with open(self.config_file, 'r', encoding='utf-8') as f:
                     self._config = json.load(f)
-            except Exception:
-                self._config = {}
+            except json.JSONDecodeError as e:
+                print(f"[Config] Aviso: Arquivo de config com JSON inválido ({e}), usando configurações padrão")
+                self._config = self._get_default_config()
+            except (OSError, IOError) as e:
+                print(f"[Config] Aviso: Erro ao ler arquivo de config ({e}), usando configurações padrão")
+                self._config = self._get_default_config()
         else:
             self._config = self._get_default_config()
             self._save()
@@ -37,8 +41,10 @@ class Config:
         try:
             with open(self.config_file, 'w', encoding='utf-8') as f:
                 json.dump(self._config, f, indent=2, ensure_ascii=False)
-        except Exception:
-            pass
+        except (OSError, IOError) as e:
+            print(f"[Config] Erro: Falha ao salvar configurações ({e})")
+        except TypeError as e:
+            print(f"[Config] Erro: Dados de configuração inválidos para serialização ({e})")
     
     def _get_default_config(self) -> Dict[str, Any]:
         """Retorna configurações padrão."""

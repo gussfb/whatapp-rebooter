@@ -32,7 +32,8 @@ def main():
         app_hwnd = root.winfo_id()
         app_hwnd = win32gui.GetParent(app_hwnd) if win32gui.GetParent(app_hwnd) else app_hwnd
         window_manager.set_app_hwnd(app_hwnd)
-    except Exception:
+    except (AttributeError, RuntimeError):
+        # Silencia erro se HWND não estiver disponível ainda
         pass
     
     # Cria janela principal
